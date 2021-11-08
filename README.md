@@ -49,6 +49,8 @@ Install other required Python packages:
 pip install ftfy regex tqdm omegaconf pytorch-lightning IPython kornia imageio imageio-ffmpeg einops torch_optimizer
 ```
 
+Or use the ```requirements.txt``` file, which includes version numbers.
+
 Clone required repositories:
 
 ```sh
@@ -70,6 +72,7 @@ mkdir checkpoints
 curl -L -o checkpoints/vqgan_imagenet_f16_16384.yaml -C - 'https://heibox.uni-heidelberg.de/d/a7530b09fed84f80a887/files/?p=%2Fconfigs%2Fmodel.yaml&dl=1' #ImageNet 16384
 curl -L -o checkpoints/vqgan_imagenet_f16_16384.ckpt -C - 'https://heibox.uni-heidelberg.de/d/a7530b09fed84f80a887/files/?p=%2Fckpts%2Flast.ckpt&dl=1' #ImageNet 16384
 ```
+Note that users of ```curl``` on Microsoft Windows should use double quotes.
 
 The `download_models.sh` script is an optional way to download a number of models. By default, it will download just 1 model.
 
@@ -176,6 +179,7 @@ To use `zoom.sh`, specifying a text prompt, output filename and number of frames
 ```sh
 ./zoom.sh "A painting of a red telephone box spinning through a time vortex" Telephone.png 150
 ```
+If you don't have ImageMagick installed, you can install it with ```sudo apt install imagemagick```
 
 <img src="./samples/zoom.gif" width="256px"></img>
 
