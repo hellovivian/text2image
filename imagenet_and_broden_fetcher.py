@@ -88,7 +88,7 @@ def download_image(path, url):
   image_prefix = image_name.split(".")[0]
   saving_path = os.path.join(path, image_prefix + ".jpg")
   urllib.request.urlretrieve(url, saving_path)
-
+  
   try:
     # Throw an exception if the image is unreadable or corrupted
     Image.open(saving_path).verify()
@@ -96,6 +96,7 @@ def download_image(path, url):
     # Remove images smaller than 10kb, to make sure we are not downloading empty/low quality images
     if tf.io.gfile.stat(saving_path).length < kMinFileSize:
       tf.io.gfile.remove(saving_path)
+    return True
   # PIL.Image.verify() throws a default exception if it finds a corrupted image.
   except Exception as e:
     tf.io.gfile.remove(
@@ -286,8 +287,9 @@ def generate_random_folders(working_directory, saving_dir, random_folder_prefix,
         # We are filtering out images from Flickr urls, since several of those were removed
         if "flickr" not in url:
           try:
-            download_image(partition_folder_path, url)
-            examples_selected += 1
+            b = download_image(partition_folder_path, url)
+            if b:
+                examples_selected += 1
             if (examples_selected) % 10 == 0:
               tf.compat.v1.logging.info("Downloaded " + str(examples_selected) + "/" +
                               str(number_of_examples_per_folder) + " for " +
