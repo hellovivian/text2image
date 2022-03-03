@@ -705,8 +705,8 @@ def synth(z):
     return clamp_with_grad(model.decode(z_q).add(1).div(2), 0, 1)
 
 
-#@torch.no_grad()
-@torch.inference_mode()
+@torch.no_grad()
+#@torch.inference_mode()
 def checkin(i, losses):
     losses_str = ', '.join(f'{loss.item():g}' for loss in losses)
     tqdm.write(f'i: {i}, loss: {sum(losses).item():g}, losses: {losses_str}')
@@ -749,8 +749,8 @@ def train(i):
     loss.backward()
     opt.step()
     
-    #with torch.no_grad():
-    with torch.inference_mode():
+    with torch.no_grad():
+    #with torch.inference_mode():
         z.copy_(z.maximum(z_min).minimum(z_max))
 
 
