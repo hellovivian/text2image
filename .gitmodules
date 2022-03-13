@@ -1,0 +1,3 @@
+[submodule "text2image-ui"]
+	path = text2image-ui
+	url = https://github.com/hellovivian/text2image-ui.git
