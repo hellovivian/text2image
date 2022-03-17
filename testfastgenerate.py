@@ -147,9 +147,9 @@ class MakeCutouts(nn.Module):
 			elif item == 'Cr':
 				augment_list.append(K.RandomCrop(size=(self.cut_size,self.cut_size), pad_if_needed=True, padding_mode='reflect', p=0.5))
 			elif item == 'Er':
-				augment_list.append(K.RandomErasing(scale=(.1, .4), ratio=(.3, 1/.3), same_on_batch=True, p=0.7))
+				augment_list.append(K.RandomErasing(scale=(0.1, 0.4), ratio=(0.3, 1/.3), same_on_batch=True, p=0.7))
 			elif item == 'Re':
-				augment_list.append(K.RandomResizedCrop(size=(self.cut_size,self.cut_size), scale=(0.1,1),  ratio=(0.75,1.333), cropping_mode='resample', p=0.5))
+				augment_list.append(K.RandomResizedCrop(size=(self.cut_size,self.cut_size),scale=(0.1,1),ratio=(0.75,1.333),cropping_mode='resample', p=0.5))
 				
 		self.augs = nn.Sequential(*augment_list)
 		self.noise_fac = 0.1
@@ -161,7 +161,7 @@ class MakeCutouts(nn.Module):
 	def forward(self, input):
 		cutouts = []
 		
-		for _ in range(self.cutn):            
+		for _ in range(self.cutn):
 			# Use Pooling
 			cutout = (self.av_pool(input) + self.max_pool(input))/2
 			cutouts.append(cutout)
@@ -217,9 +217,9 @@ def get_opt(opt_name, opt_lr):
 	elif opt_name == "DiffGrad":
 		opt = DiffGrad([z], lr=opt_lr, eps=1e-9, weight_decay=1e-9) # NR: Playing for reasons
 	elif opt_name == "AdamP":
-		opt = AdamP([z], lr=opt_lr)		    
+		opt = AdamP([z], lr=opt_lr)
 	elif opt_name == "RAdam":
-		opt = RAdam([z], lr=opt_lr)		    
+		opt = RAdam([z], lr=opt_lr)
 	elif opt_name == "RMSprop":
 		opt = optim.RMSprop([z], lr=opt_lr)
 	else:
@@ -267,7 +267,6 @@ def train(i,z):
 	
 	if i % display_freq == 0:
 		checkin(i, lossAll)
-	   
 	loss = sum(lossAll)
 	loss.backward()
 	opt.step()
@@ -301,8 +300,10 @@ cutn = 32
 cut_pow = 1
 seed = 64
 display_freq=50
+normalize = transforms.Normalize(mean=[0.48145466, 0.4578275, 0.40821073],
+                                  std=[0.26862954, 0.26130258, 0.27577711])
 
-def generate(prompt_string, iterations = 100, output_name, size=(256, 256), seed=16, width=256, height=256):
+def generate(prompt_string, output_name, iterations = 100, size=(256, 256), seed=16, width=256, height=256):
 	pMs=[]
 	prompts = [prompt_string]
 	output = output_name
@@ -367,5 +368,20 @@ def generate(prompt_string, iterations = 100, output_name, size=(256, 256), seed
 
 
 
+import flask
+def create_app():
 
+
+	app = Flask(__name__)
+
+	app.config.from_mapping(
+	SEND_FILE_MAX_AGE_DEFAULT = 0
+	)
+	return app
+
+
+exporting_threads = {}
+
+
+app = create_app()
 
