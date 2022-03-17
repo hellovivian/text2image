@@ -241,13 +241,14 @@ synthesizes
 Saves the output
 """
 @torch.no_grad()
-def checkin(i, losses, z, output):
+def checkin(i, losses, z, output, output_dir = ""):
 	losses_str = ', '.join(f'{loss.item():g}' for loss in losses)
 	tqdm.write(f'i: {i}, loss: {sum(losses).item():g}, losses: {losses_str}')
 	out = synth(z)
 	info = PngImagePlugin.PngInfo()
 # 	info.add_text('comment', f'{prompts}')
-	TF.to_pil_image(out[0].cpu()).save(output, pnginfo=info) 	
+	print('saving here: ' + output_dir + output)
+	TF.to_pil_image(out[0].cpu()).save(output_dir + output, pnginfo=info) 	
 
 """
 iii is the image
@@ -261,12 +262,12 @@ def ascend_txt(z, pMs):
 	return result # return loss
 
 
-def train(i,z, opt, pMs, output, z_min, z_max):
+def train(i,z, opt, pMs, output, z_min, z_max, output_dir=""):
 	opt.zero_grad(set_to_none=True)
 	lossAll = ascend_txt(z, pMs)
 	
 	if i % display_freq == 0:
-		checkin(i, lossAll,z, output)
+		checkin(i, lossAll,z, output, output_dir=output_dir)
 	   
 	loss = sum(lossAll)
 	loss.backward()
@@ -315,7 +316,7 @@ display_freq=50
 
 
 
-def generate(prompt_string, output_name,iterations = 100,  size=(256, 256), seed=16, width=256, height=256):
+def generate(prompt_string, output_name,iterations = 100,  size=(256, 256), seed=16, width=256, height=256, output_dir=""):
 	pMs=[]
 	prompts = [prompt_string]
 	output = output_name
@@ -361,7 +362,7 @@ def generate(prompt_string, output_name,iterations = 100,  size=(256, 256), seed
 		while True:            
 
 			# Training time
-			train(i,z, opt, pMs, output_name, z_min, z_max)
+			train(i,z, opt, pMs, output_name, z_min, z_max, output_dir)
 
 			# Ready to stop yet?
 			if i == iterations:
@@ -404,11 +405,11 @@ app = create_app()
 def evaluate():
     prompts = request.get_json(force=True)
     for prompt in prompts["prompts"]:
-        generate(prompt, "_".join(prompt.split(" ")) + ".jpg")
+        generate(prompt, "_".join(prompt.split(" ")) + ".jpg", output_dir = "../../shared_images/")
     return jsonify(prompts)
 
 def run():
-    app.run(host='0.0.0.0',port=8880, threaded=False, debug=True)
+    app.run(host='0.0.0.0',port=8888, threaded=False, debug=True)
 run()
 
 
