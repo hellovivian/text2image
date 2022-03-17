@@ -147,9 +147,9 @@ class MakeCutouts(nn.Module):
 			elif item == 'Cr':
 				augment_list.append(K.RandomCrop(size=(self.cut_size,self.cut_size), pad_if_needed=True, padding_mode='reflect', p=0.5))
 			elif item == 'Er':
-				augment_list.append(K.RandomErasing(scale=(0.1, 0.4), ratio=(0.3, 1/.3), same_on_batch=True, p=0.7))
+				augment_list.append(K.RandomErasing(scale=(.1, .4), ratio=(.3, 1/.3), same_on_batch=True, p=0.7))
 			elif item == 'Re':
-				augment_list.append(K.RandomResizedCrop(size=(self.cut_size,self.cut_size),scale=(0.1,1),ratio=(0.75,1.333),cropping_mode='resample', p=0.5))
+				augment_list.append(K.RandomResizedCrop(size=(self.cut_size,self.cut_size), scale=(0.1,1),  ratio=(0.75,1.333), cropping_mode='resample', p=0.5))
 				
 		self.augs = nn.Sequential(*augment_list)
 		self.noise_fac = 0.1
@@ -161,7 +161,7 @@ class MakeCutouts(nn.Module):
 	def forward(self, input):
 		cutouts = []
 		
-		for _ in range(self.cutn):
+		for _ in range(self.cutn):            
 			# Use Pooling
 			cutout = (self.av_pool(input) + self.max_pool(input))/2
 			cutouts.append(cutout)
@@ -205,7 +205,7 @@ def resize_image(image, out_size):
 	return image.resize(size, Image.LANCZOS)
 
 # Set the optimiser
-def get_opt(opt_name, opt_lr):
+def get_opt(opt_name, opt_lr ,z):
 	if opt_name == "Adam":
 		opt = optim.Adam([z], lr=opt_lr)	# LR=0.1 (Default)
 	elif opt_name == "AdamW":
@@ -217,9 +217,9 @@ def get_opt(opt_name, opt_lr):
 	elif opt_name == "DiffGrad":
 		opt = DiffGrad([z], lr=opt_lr, eps=1e-9, weight_decay=1e-9) # NR: Playing for reasons
 	elif opt_name == "AdamP":
-		opt = AdamP([z], lr=opt_lr)
+		opt = AdamP([z], lr=opt_lr)		    
 	elif opt_name == "RAdam":
-		opt = RAdam([z], lr=opt_lr)
+		opt = RAdam([z], lr=opt_lr)		    
 	elif opt_name == "RMSprop":
 		opt = optim.RMSprop([z], lr=opt_lr)
 	else:
@@ -241,18 +241,18 @@ synthesizes
 Saves the output
 """
 @torch.no_grad()
-def checkin(i, losses):
+def checkin(i, losses, z, output):
 	losses_str = ', '.join(f'{loss.item():g}' for loss in losses)
 	tqdm.write(f'i: {i}, loss: {sum(losses).item():g}, losses: {losses_str}')
 	out = synth(z)
 	info = PngImagePlugin.PngInfo()
-	info.add_text('comment', f'{prompts}')
+# 	info.add_text('comment', f'{prompts}')
 	TF.to_pil_image(out[0].cpu()).save(output, pnginfo=info) 	
 
 """
 iii is the image
 """
-def ascend_txt(z):
+def ascend_txt(z, pMs):
 	out = synth(z)
 	iii = perceptor.encode_image(normalize(make_cutouts(out))).float()
 	result = []
@@ -261,18 +261,27 @@ def ascend_txt(z):
 	return result # return loss
 
 
-def train(i,z):
+def train(i,z, opt, pMs, output, z_min, z_max):
 	opt.zero_grad(set_to_none=True)
-	lossAll = ascend_txt(z)
+	lossAll = ascend_txt(z, pMs)
 	
 	if i % display_freq == 0:
-		checkin(i, lossAll)
+		checkin(i, lossAll,z, output)
+	   
 	loss = sum(lossAll)
 	loss.backward()
 	opt.step()
 	
 	with torch.no_grad():
 		z.copy_(z.maximum(z_min).minimum(z_max))
+
+cutn = 32
+cut_pow = 1
+optimizer = 'Adam'
+torch.backends.cudnn.deterministic = True
+augments = [['Af', 'Pe', 'Ji', 'Er']]
+replace_grad = ReplaceGrad.apply
+clamp_with_grad = ClampWithGrad.apply
 
 cuda_device = 0
 device = torch.device(cuda_device)
@@ -290,6 +299,8 @@ cut_size = perceptor.visual.input_resolution
 
 replace_grad = ReplaceGrad.apply
 clamp_with_grad = ClampWithGrad.apply
+make_cutouts = MakeCutouts(cut_size, cutn, cut_pow=cut_pow)
+torch.backends.cudnn.deterministic = True
 augments = [['Af', 'Pe', 'Ji', 'Er']]
 optimizer = 'Adam'
 
@@ -299,13 +310,12 @@ cut_pow = 1
 seed = 64
 display_freq=50
 
-make_cutouts = MakeCutouts(cut_size, cutn, cut_pow=cut_pow)
-torch.backends.cudnn.deterministic = True
 
-normalize = transforms.Normalize(mean=[0.48145466, 0.4578275, 0.40821073],
-                                  std=[0.26862954, 0.26130258, 0.27577711])
 
-def generate(prompt_string, output_name, iterations = 100, size=(256, 256), seed=16, width=256, height=256):
+
+
+
+def generate(prompt_string, output_name,iterations = 100,  size=(256, 256), seed=16, width=256, height=256):
 	pMs=[]
 	prompts = [prompt_string]
 	output = output_name
@@ -316,8 +326,7 @@ def generate(prompt_string, output_name, iterations = 100, size=(256, 256), seed
 		pMs.append(Prompt(embed, weight, stop).to(device))
 
 	learning_rate = 0.1
-	opt = get_opt(optimizer, learning_rate)
-   
+
 	# Output for the user
 	print('Using device:', device)
 	print('Optimising using:', optimizer)
@@ -343,7 +352,8 @@ def generate(prompt_string, output_name, iterations = 100, size=(256, 256), seed
 	z_orig = z.clone()
 	z.requires_grad_(True)
 
-	pMs = []
+	opt = get_opt(optimizer, learning_rate,z)
+
 	normalize = transforms.Normalize(mean=[0.48145466, 0.4578275, 0.40821073],
 									  std=[0.26862954, 0.26130258, 0.27577711])
 
@@ -351,22 +361,19 @@ def generate(prompt_string, output_name, iterations = 100, size=(256, 256), seed
 		while True:            
 
 			# Training time
-			train(i,z)
+			train(i,z, opt, pMs, output_name, z_min, z_max)
 
 			# Ready to stop yet?
 			if i == iterations:
 
-				output =output_name
-
-	#             # Load and resize image
-				img = Image.open(output)
-				pil_image = img.convert('RGB')
-				pil_image = pil_image.resize((width, height), Image.LANCZOS)
-				pil_tensor = TF.to_tensor(pil_image)
 				break
 
 			i += 1
 			pbar.update()
+
+
+normalize = transforms.Normalize(mean=[0.48145466, 0.4578275, 0.40821073],
+                                  std=[0.26862954, 0.26130258, 0.27577711])
 
 
 
@@ -391,19 +398,18 @@ exporting_threads = {}
 app = create_app()
 
 
-#handles web requests from unity
+exporting_threads = {}
+app = create_app()
 @app.route('/', methods=["POST"])
 def evaluate():
-
-    prompts = request.form["prompts"]
-    print(prompts)
+    prompts = request.get_json(force=True)
+    generate(prompts["prompts"], "testflask.jpg")
     return jsonify(prompts)
-    
 
 def run():
-    app.run(host='0.0.0.0',port=8880, threaded=False)
-
+    app.run(host='0.0.0.0',port=8880, threaded=False, debug=True)
 run()
+
 
 
 
