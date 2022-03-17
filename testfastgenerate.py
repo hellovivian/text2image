@@ -405,7 +405,15 @@ app = create_app()
 def evaluate():
     prompts = request.get_json(force=True)
     for prompt in prompts["prompts"]:
-        generate(prompt, "_".join(prompt.split(" ")) + ".jpg", output_dir = "../../shared_images/")
+        prompt_pattern = r'(\w+)(_in_the_style_of_)(\w+)'
+        prompt_pattern_match = re.match(prompt_pattern, prompt)
+        if prompt_pattern_match:  
+            subject = prompt_pattern_match.group(1)
+            style = prompt_pattern_match.group(3)
+            generate(prompt, f"{subject}_{style}_100.jpg", output_dir = "../../shared_images/")
+        else:
+            print("no match no generation")
+            print(prompt)
     return jsonify(prompts)
 
 def run():
