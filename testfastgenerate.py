@@ -403,7 +403,8 @@ app = create_app()
 @app.route('/', methods=["POST"])
 def evaluate():
     prompts = request.get_json(force=True)
-    generate(prompts["prompts"], "testflask.jpg")
+    for prompt in prompts["prompts"]:
+        generate(prompt, "_".join(prompt.split(" ")) + ".jpg")
     return jsonify(prompts)
 
 def run():
