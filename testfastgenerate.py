@@ -290,8 +290,6 @@ cut_size = perceptor.visual.input_resolution
 
 replace_grad = ReplaceGrad.apply
 clamp_with_grad = ClampWithGrad.apply
-make_cutouts = MakeCutouts(cut_size, cutn, cut_pow=cut_pow)
-torch.backends.cudnn.deterministic = True
 augments = [['Af', 'Pe', 'Ji', 'Er']]
 optimizer = 'Adam'
 
@@ -300,6 +298,10 @@ cutn = 32
 cut_pow = 1
 seed = 64
 display_freq=50
+
+make_cutouts = MakeCutouts(cut_size, cutn, cut_pow=cut_pow)
+torch.backends.cudnn.deterministic = True
+
 normalize = transforms.Normalize(mean=[0.48145466, 0.4578275, 0.40821073],
                                   std=[0.26862954, 0.26130258, 0.27577711])
 
@@ -369,6 +371,9 @@ def generate(prompt_string, output_name, iterations = 100, size=(256, 256), seed
 
 
 import flask
+from flask import Flask, send_file, request, jsonify, g, render_template, url_for, stream_with_context
+from werkzeug.exceptions import BadRequest
+from werkzeug.utils import secure_filename
 def create_app():
 
 
@@ -384,4 +389,22 @@ exporting_threads = {}
 
 
 app = create_app()
+
+
+#handles web requests from unity
+@app.route('/', methods=["POST"])
+def evaluate():
+
+    prompts = request.form["prompts"]
+    print(prompts)
+    return jsonify(prompts)
+    
+
+def run():
+    app.run(host='0.0.0.0',port=8880, threaded=False)
+
+run()
+
+
+
 
