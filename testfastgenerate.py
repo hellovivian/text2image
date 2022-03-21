@@ -406,7 +406,8 @@ app = create_app()
 def evaluate():
     prompts = request.get_json(force=True)
     for prompt in prompts["prompts"]:
-        prompt_pattern = r'(\w+)(_in_the_style_of_)(\w+)'
+        print(prompt)
+        prompt_pattern = r'([A-Za-z\s]+)( in the style of )([A-Za-z\s]+)'
         prompt_pattern_match = re.match(prompt_pattern, prompt)
         if prompt_pattern_match:  
             subject = prompt_pattern_match.group(1)
