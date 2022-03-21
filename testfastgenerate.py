@@ -412,14 +412,14 @@ def evaluate():
         if prompt_pattern_match:  
             subject = prompt_pattern_match.group(1)
             style = prompt_pattern_match.group(3)
-            generate(prompt, f"{subject}_{style}_100.jpg", output_dir = "../../shared_images/")
+            generate(prompt, f"{subject}_{style}_100.jpg", output_dir = "../shared_images/")
         else:
             print("no match no generation")
             print(prompt)
     return jsonify(prompts)
 
 def run():
-    app.run(host='0.0.0.0',port=8888, threaded=False, debug=True)
+    app.run(host='0.0.0.0',port=8891, threaded=False, debug=True)
 run()
 
 
