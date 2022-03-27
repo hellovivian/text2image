@@ -241,8 +241,10 @@ synthesizes
 Saves the output
 """
 @torch.no_grad()
-def checkin(i, losses, z, output, output_dir = ""):
+def checkin(i, losses, z, output, output_dir = "", iterations = 1000):
 	losses_str = ', '.join(f'{loss.item():g}' for loss in losses)
+	if i == iterations and sum(losses).item() >= 0.95:
+		output = "garbage" +output
 	tqdm.write(f'i: {i}, loss: {sum(losses).item():g}, losses: {losses_str}')
 	out = synth(z)
 	info = PngImagePlugin.PngInfo()
@@ -262,12 +264,12 @@ def ascend_txt(z, pMs):
 	return result # return loss
 
 
-def train(i,z, opt, pMs, output, z_min, z_max, output_dir=""):
+def train(i,z, opt, pMs, output, z_min, z_max, output_dir="", iterations = 1000):
 	opt.zero_grad(set_to_none=True)
 	lossAll = ascend_txt(z, pMs)
 	
 	if i % display_freq == 0:
-		checkin(i, lossAll,z, output, output_dir=output_dir)
+		checkin(i, lossAll,z, output[:-4]+"time=0" +output[-4:], output_dir=output_dir, iterations = iterations)
 	   
 	loss = sum(lossAll)
 	loss.backward()
@@ -363,7 +365,7 @@ def generate(prompt_string, output_name,iterations = 100,  size=(256, 256), seed
 		while True:            
 
 			# Training time
-			train(i,z, opt, pMs, output_name, z_min, z_max, output_dir)
+			train(i,z, opt, pMs, output_name, z_min, z_max, output_dir, iterations)
 
 			# Ready to stop yet?
 			if i == iterations:
@@ -414,8 +416,9 @@ def evaluate():
             style = prompt_pattern_match.group(3)
             generate(prompt, f"{subject}_{style}_100.jpg", output_dir = "../shared_images/")
         else:
-            print("no match no generation")
-            print(prompt)
+            generate(prompt, f"{prompt}_custom_100.jpg", output_dir = "../../shared_images/")
+#             print("no match no generation")
+#             print(prompt)
     return jsonify(prompts)
 
 def run():
