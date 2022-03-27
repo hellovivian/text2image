@@ -269,7 +269,7 @@ def train(i,z, opt, pMs, output, z_min, z_max, output_dir="", iterations = 1000)
 	lossAll = ascend_txt(z, pMs)
 	
 	if i % display_freq == 0:
-		checkin(i, lossAll,z, output, output_dir=output_dir, iterations = iterations)
+		checkin(i, lossAll,z, output[:-4]+"time=0" +output[-4:], output_dir=output_dir, iterations = iterations)
 	   
 	loss = sum(lossAll)
 	loss.backward()
@@ -416,8 +416,9 @@ def evaluate():
             style = prompt_pattern_match.group(3)
             generate(prompt, f"{subject}_{style}_100.jpg", output_dir = "../../shared_images/")
         else:
-            print("no match no generation")
-            print(prompt)
+            generate(prompt, f"{prompt}_custom_100.jpg", output_dir = "../../shared_images/")
+#             print("no match no generation")
+#             print(prompt)
     return jsonify(prompts)
 
 def run():
