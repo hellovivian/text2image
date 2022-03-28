@@ -414,9 +414,18 @@ def evaluate():
         if prompt_pattern_match:  
             subject = prompt_pattern_match.group(1)
             style = prompt_pattern_match.group(3)
-            generate(prompt, f"{subject}_{style}_100.jpg", output_dir = "../shared_images/")
+            
+            output_name = f"{subject}_{style}_100.jpg"
+            if output_name in os.listdir("../shared_images/"):
+                print("prev generated not generating")
+            else:
+                generate(prompt, f"{subject}_{style}_100.jpg", output_dir = "../shared_images/")
         else:
-            generate(prompt, f"{prompt}_custom_100.jpg", output_dir = "../shared_images/")
+            output_name = f"{prompt}_custom_100.jpg"
+            if output_name in os.listdir("../shared_images/"):
+                print("prev generated not generating")
+            else:
+                generate(prompt, f"{prompt}_custom_100.jpg", output_dir = "../shared_images/")
 #             print("no match no generation")
 #             print(prompt)
     return jsonify(prompts)
