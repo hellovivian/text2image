@@ -318,7 +318,7 @@ display_freq=50
 
 
 
-def generate(prompt_string, output_name,iterations = 100,  size=(256, 256), seed=16, width=256, height=256, output_dir=""):
+def generate(prompt_string, output_name,iterations = 100,  size=(128, 128), seed=16, width=128, height=128, output_dir=""):
 	torch.cuda.empty_cache()
 	pMs=[]
 	prompts = [prompt_string]
