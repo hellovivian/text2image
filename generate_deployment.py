@@ -244,7 +244,7 @@ Saves the output
 def checkin(i, losses, z, output, output_dir = "", iterations = 1000):
 	losses_str = ', '.join(f'{loss.item():g}' for loss in losses)
 	if i == iterations and sum(losses).item() >= 0.95:
-		output = "garbage" +output
+		output = output
 	tqdm.write(f'i: {i}, loss: {sum(losses).item():g}, losses: {losses_str}')
 	out = synth(z)
 	info = PngImagePlugin.PngInfo()
